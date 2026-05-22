@@ -10,9 +10,13 @@ async def get_dashboard_summary(
     property_id: str,
     current_user: dict = Depends(get_current_user)
 ) -> Dict[str, Any]:
-    
-    tenant_id = getattr(current_user, "tenant_id", "default_tenant") or "default_tenant"
-    
+
+    tenant_id = getattr(current_user, "tenant_id", None)
+    if not tenant_id:
+        # Refuse to serve under a shared sentinel bucket — that path
+        # re-creates the very cross-tenant leak we just closed.
+        raise HTTPException(status_code=403, detail="Tenant not resolved for this user")
+
     revenue_data = await get_revenue_summary(property_id, tenant_id)
     
     total_revenue_float = float(revenue_data['total'])

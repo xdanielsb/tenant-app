@@ -18,12 +18,13 @@ async def get_dashboard_summary(
         raise HTTPException(status_code=403, detail="Tenant not resolved for this user")
 
     revenue_data = await get_revenue_summary(property_id, tenant_id)
-    
-    total_revenue_float = float(revenue_data['total'])
-    
+
+    # Pass the Decimal value through as a string. Casting to float here
+    # collapses NUMERIC(10,3) into IEEE-754 and reintroduces the cent-level
+    # drift the schema's sub-cent precision was chosen to avoid.
     return {
         "property_id": revenue_data['property_id'],
-        "total_revenue": total_revenue_float,
+        "total_revenue": revenue_data['total'],
         "currency": revenue_data['currency'],
         "reservations_count": revenue_data['count']
     }
